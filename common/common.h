@@ -93,7 +93,7 @@ private:
             } else {
                 uint32_t ipAddr = addr.sin_addr.s_addr;
                 std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "Read bytes : " << msgLen << ", input buffer size : " << inputBufferSize << ", from address : " << ipAddr << '\n';
-                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "PPID : " << sri.sinfo_ppid << '\n'; //client code
+                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "PPID : " << sri.sinfo_ppid << '\n'; //means client port
                 if (sri.sinfo_assoc_id == 0) {
                     std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "Assoc id = 0" << '\n';
                 } else {
@@ -101,9 +101,65 @@ private:
                 }
                 if (flag & MSG_NOTIFICATION) {
                     std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "Notification received from : " << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << '\n';
+                    const auto& notification = static_cast<sctp_notification*>((void*)inputBuffer);
+                    std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "Notification Type : " << notification->sn_header.sn_type << '\n';
+                    if (SCTP_ASSOC_CHANGE == notification->sn_header.sn_type) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_ASSOC_CHANGE notification has been received.\n";
+                        const auto& sac = static_cast<sctp_assoc_change*>(&(notification->sn_assoc_change));
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "Assoc id => " << sac->sac_assoc_id << '\n';
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "Notification type = " << sac->sac_state << '\n';
+                        switch(sac->sac_state) {
+                            break; case SCTP_COMM_UP : {
+                                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_COMM_UP\n";
+                                //invoke callback func
+                            }
+                            break; case SCTP_COMM_LOST : {
+                                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_COMM_LOST\n";
+                                //invoke callback func
+                            }
+                            break; case SCTP_RESTART : {
+                                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_RESTART\n";
+                                //invoke callback func
+                            }
+                            break; case SCTP_SHUTDOWN_COMP : {
+                                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_SHUTDOWN_COMP\n";
+                                //invoke callback func
+                            }
+                            break; case SCTP_CANT_STR_ASSOC : {
+                                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_CANT_STR_ASSOC\n";
+                                //invoke callback func
+                            }
+                        }
+                    } else if (SCTP_DATA_IO_EVENT == notification->sn_header.sn_type) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_DATA_IO_EVENT notification has been received.\n";
+                    } else if (SCTP_SHUTDOWN_EVENT == notification->sn_header.sn_type) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_SHUTDOWN_EVENT notification has been received.\n";
+                    } else if (SCTP_SENDER_DRY_EVENT == notification->sn_header.sn_type) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_SENDER_DRY_EVENT notification has been received.\n";
+                    } else if (SCTP_SEND_FAILED_EVENT == notification->sn_header.sn_type) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_SEND_FAILED_EVENT notification has been received.\n";
+                    } else if (SCTP_ADAPTATION_INDICATION == notification->sn_header.sn_type) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_ADAPTATION_INDICATION notification has been received.\n";
+                    } else if (SCTP_AUTHENTICATION_EVENT == notification->sn_header.sn_type) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_AUTHENTICATION_EVENT notification has been received.\n";
+                    } else if (SCTP_PEER_ADDR_CHANGE == notification->sn_header.sn_type) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_PEER_ADDR_CHANGE notification has been received.\n";
+                        const auto& sac = static_cast<sctp_paddr_change*>(&(notification->sn_paddr_change));
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "Assoc id => " << sac->spc_assoc_id << '\n';
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "Notification type = " << sac->spc_type << '\n';
+
+                    } else {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "Other notification type\n";
+                    }
                 } else {
-                    std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << msgLen << "bytes received received from : " << inet_ntoa(addr.sin_addr) << ":"
+                    std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << msgLen << " bytes received received from : " << inet_ntoa(addr.sin_addr) << ":"
                               << ntohs(addr.sin_port) << '\n';
+
+                    char* dataRef = static_cast<char*>(inputBuffer);
+                    std::string received{dataRef, inputBufferSize};
+                    std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << received << " received received from : " << inet_ntoa(addr.sin_addr) << ":"
+                              << ntohs(addr.sin_port) << '\n';
+                    //invoke callback func
                 }
             }
             sleep(5);

@@ -37,7 +37,7 @@ void client::create_socket() const {
 
     struct sctp_paddrparams heartbeat {
         .spp_hbinterval = 20000,
-        .spp_pathmaxrxt = 2,
+        .spp_pathmaxrxt = 5,
         .spp_flags = SPP_HB_ENABLE,
     };
 
@@ -104,21 +104,9 @@ void client::create_socket() const {
 
     std::cout << "CONNECTED!\n";
 
-    //char buf[1024];
-    char buf[2];
-    //memset(buf, 0, sizeof(buf));
-    memset(buf, 0, 2);
-    //snprintf(buf, sizeof(buf)-1, "---HELLO FROM CLIENT");
-    snprintf(buf, 2, "j");
-    //std::cout << std::string(buf) << '\n';
-    //if(send(clientSock.get_socket_descriptor(), &buf, 1024, 0) == -1) {
-    //    std::cerr << "send() failed from client socket\n";
-    //    close(clientSock.get_socket_descriptor());
-    //    return;
-    //} else {
-    //    std::cout << "ELSE!\n";
-    //    return;
-    //}
+    char buf[1024];
+    memset(buf, 0, sizeof(buf));
+    snprintf(buf, sizeof(buf)-1, "---HELLO FROM CLIENT");
 
     getchar();
 
@@ -136,16 +124,6 @@ void client::create_socket() const {
         std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "sent " << msgLen << " bytes to peer!\n";
         sleep(10);
     }
-
-    //char buffer[1024];
-    //memset(buffer, 'x', 1024);
-    //if(send(clientSock.get_socket_descriptor(), buffer, 1024, 0) == -1) {
-    //    std::cout << "ERR!\n";
-    //    return;
-    //} else {
-    //    std::cout << "else!\n";
-    //    return;
-    //}
 
 }
 

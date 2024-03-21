@@ -21,7 +21,7 @@ void server::create_socket() const {
 
     struct sctp_paddrparams heartbeat {
             .spp_hbinterval = 20000,
-            .spp_pathmaxrxt = 1,
+            .spp_pathmaxrxt = 5,
             .spp_flags = SPP_HB_ENABLE,
     };
 
