@@ -104,9 +104,12 @@ void client::create_socket() const {
 
     std::cout << "CONNECTED!\n";
 
-    char buf[1024];
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf)-1, "---HELLO FROM CLIENT");
+    //char buf[1024];
+    char buf[2];
+    //memset(buf, 0, sizeof(buf));
+    memset(buf, 0, 2);
+    //snprintf(buf, sizeof(buf)-1, "---HELLO FROM CLIENT");
+    snprintf(buf, 2, "j");
     //std::cout << std::string(buf) << '\n';
     //if(send(clientSock.get_socket_descriptor(), &buf, 1024, 0) == -1) {
     //    std::cerr << "send() failed from client socket\n";
@@ -116,6 +119,8 @@ void client::create_socket() const {
     //    std::cout << "ELSE!\n";
     //    return;
     //}
+
+    getchar();
 
     while(true) {
         std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "client endless loop" << '\n';

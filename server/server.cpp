@@ -93,51 +93,18 @@ void server::create_socket() const {
     }
 
     std::cout << "listening is completed\n";
-    //now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     ofs << "listening is completed\n";
 
     std::cout << "[Thread " << std::this_thread::get_id() << "]" << "serverSock.open()" << '\n';
+    ofs << "[Thread " << std::this_thread::get_id() << "]" << "serverSock.open()" << '\n';
     serverSock.open();
 
     while(true) {
         std::cout << "[Thread " << std::this_thread::get_id() << "]" << "server endless loop" << '\n';
+        ofs << "[Thread " << std::this_thread::get_id() << "]" << "server endless loop" << '\n';
+        ofs.flush();
         sleep(5);
     }
-
-
-    /*
-    void* inputBuffer{nullptr};
-    size_t inputBufferSize{0};
-    sockaddr_in addr;
-    (void)memset(&addr, 0, sizeof(sockaddr_in));
-    sctp_sndrcvinfo sri;
-    (void)memset(&sri, 0, sizeof(sctp_sndrcvinfo));
-    socklen_t len = sizeof(addr);
-    int msgLen = 0;
-    int flag{0};
-    if ((msgLen = sctp_recvmsg(serverSock.get_socket_descriptor(), inputBuffer, inputBufferSize, (sockaddr*)&addr, &len, &sri, &flag)) < 0) {
-        //std::cout << "SCTP read failed, errno : " << errno << ", error : " << strerror(errno) << '\n';
-        ofs << "SCTP read failed, errno : " << errno << ", error : " << strerror(errno) << '\n';
-    } else {
-        //std::cout << "Read bytes : " << msgLen << '\n';
-        uint32_t ipAddr = addr.sin_addr.s_addr;
-        ofs << "Read bytes : " << msgLen << " from address : " << ipAddr << '\n';
-        if (sri.sinfo_assoc_id == 0) {
-            ofs << "Assoc id = 0" << '\n';
-        } else {
-            ofs << "Assoc id => " << sri.sinfo_assoc_id << '\n';
-        }
-
-        if (flag & MSG_NOTIFICATION) {
-            ofs << "Notification received from : " << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << '\n';
-        } else {
-            ofs << msgLen << "bytes received received from : " << inet_ntoa(addr.sin_addr) << ":"
-                << ntohs(addr.sin_port) << '\n';
-        }
-    }
-     */
-
-
     ofs.close();
 }
 

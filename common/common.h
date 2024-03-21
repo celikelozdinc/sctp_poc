@@ -75,10 +75,10 @@ private:
      * invokes _data_recv_callback()
      */
     void _on_open() {
+        char inputBuffer[4096];
+        size_t inputBufferSize{4096};
         while(true) {
             std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "_on_open()"  << '\n';
-            void* inputBuffer{nullptr};
-            size_t inputBufferSize{0};
             sockaddr_in addr;
             (void)memset(&addr, 0, sizeof(sockaddr_in));
             sctp_sndrcvinfo sri;
@@ -93,7 +93,7 @@ private:
             } else {
                 uint32_t ipAddr = addr.sin_addr.s_addr;
                 std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "Read bytes : " << msgLen << ", input buffer size : " << inputBufferSize << ", from address : " << ipAddr << '\n';
-                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "PPID : " << sri.sinfo_ppid << '\n';
+                std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "PPID : " << sri.sinfo_ppid << '\n'; //client code
                 if (sri.sinfo_assoc_id == 0) {
                     std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "Assoc id = 0" << '\n';
                 } else {
