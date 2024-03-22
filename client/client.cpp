@@ -48,15 +48,13 @@ void client::create_socket() const {
         .spp_flags = SPP_HB_ENABLE,
     };
 
-    struct sctp_rtoinfo rtoinfo {
-            //.srto_assoc_id = ,
-            .srto_initial = 120,
-            .srto_max = 120,
-            .srto_min = 800,
-    };
+    //struct sctp_rtoinfo rtoinfo {
+    //        //.srto_assoc_id = ,
+    //        .srto_initial = 120,
+    //        .srto_max = 120,
+    //        .srto_min = 800,
+    //};
 
-    //struct sctp_status status;
-    //memset(&status, 0, sizeof(struct sctp_status));
 
     int sockFd{0};
     if ( (sockFd = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == -1) {
@@ -98,13 +96,6 @@ void client::create_socket() const {
     //}
 
     // connect
-    //if((connect(clientSock.get_socket_descriptor(), (struct sockaddr*)&peerAddr, sizeof(peerAddr))) < 0)
-    //{
-    //    perror("fails at connect");
-    //    close(clientSock.get_socket_descriptor());
-    //    return;
-    //}
-    //int sctp_connectx(int sd, struct sockaddr *addrs, int addrcnt,sctp_assoc_t *id);
     if((sctp_connectx(clientSock.get_socket_descriptor(), (struct sockaddr*)&peerAddr, 1, nullptr)) < 0)
     {
         perror("fails at connect");
@@ -140,8 +131,9 @@ void client::create_socket() const {
     while(true) {
         std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "client endless loop" << '\n';
         ofs << "\t[Thread " << std::this_thread::get_id() << "]" << "client endless loop" << '\n';
+        clientSock.query();
         ofs.flush();
-        sleep(20);
+        sleep(10);
     }
     ofs.close();
 }

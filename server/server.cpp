@@ -35,12 +35,12 @@ void server::create_socket() const {
             .sctp_send_failure_event_event = 1,
     };
 
-    struct sctp_rtoinfo rtoinfo {
-            //.srto_assoc_id = ,
-            .srto_initial = 120,
-            .srto_max = 120,
-            .srto_min = 800,
-    };
+    //struct sctp_rtoinfo rtoinfo {
+    //        //.srto_assoc_id = ,
+    //        .srto_initial = 120,
+    //        .srto_max = 120,
+    //        .srto_min = 800,
+    //};
 
     int sockFd{0};
     if ( (sockFd = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == -1) {
@@ -102,8 +102,9 @@ void server::create_socket() const {
     while(true) {
         std::cout << "[Thread " << std::this_thread::get_id() << "]" << "server endless loop" << '\n';
         ofs << "[Thread " << std::this_thread::get_id() << "]" << "server endless loop" << '\n';
+        serverSock.query();
         ofs.flush();
-        sleep(20);
+        sleep(10);
     }
     ofs.close();
 }

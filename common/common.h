@@ -60,6 +60,20 @@ public:
         return _fd;
     }
 
+    void query() const {
+        struct sctp_status status;
+        memset(&status, 0, sizeof(struct sctp_status));
+        int slen = sizeof(sctp_status);
+        if (getsockopt(_fd, SOL_SCTP, SCTP_STATUS, (void *)&status, (socklen_t *)&slen) != 0) {
+            std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "Couldn't query current status!\n";
+            return;
+        }
+        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "{\n";
+        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "ASSOC ID = " << status.sstat_assoc_id << '\n';
+        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "STATE = " << status.sstat_state << '\n';
+        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "}\n";
+    }
+
     /**
      * Starts the _receiverThread
      * which invokes _on_open()
@@ -179,7 +193,7 @@ private:
                     }
                 }
             }
-            sleep(5);
+            sleep(1);
         }
     }
     int _fd;
