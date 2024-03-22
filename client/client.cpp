@@ -10,6 +10,13 @@
 client::client() : _sock{-1} {}
 
 void client::create_socket() const {
+    std::ofstream ofs{"../out/client_socket.log"};
+    if (!ofs) {
+        std::cerr << "Client output file could not be created!\n";
+        exit(EXIT_FAILURE);
+    }
+
+
     // Peer Address
     struct sockaddr_in peerAddr {
             .sin_family = AF_INET,
@@ -63,6 +70,7 @@ void client::create_socket() const {
     if(setsockopt(clientSock.get_socket_descriptor(), SOL_SCTP, SCTP_PEER_ADDR_PARAMS , &heartbeat, sizeof(heartbeat)) != 0) {
         perror("fails at configuring heartbeats via setsockopt");
         close(clientSock.get_socket_descriptor());
+        ofs.close();
         return;
     }
 
@@ -70,6 +78,7 @@ void client::create_socket() const {
     if((setsockopt(clientSock.get_socket_descriptor(), SOL_SCTP, SCTP_EVENTS, (void *)&events, sizeof(events)))!= 0) {
         perror("fails at configuring events via setsockopt");
         close(clientSock.get_socket_descriptor());
+        ofs.close();
         return;
     }
 
@@ -77,6 +86,7 @@ void client::create_socket() const {
     if((setsockopt(clientSock.get_socket_descriptor(), SOL_SCTP, SCTP_INITMSG, &initMsg, sizeof(initMsg))) != 0) {
         perror("fails at configuring init message via setsockopt");
         close(clientSock.get_socket_descriptor());
+        ofs.close();
         return;
     }
 
@@ -99,32 +109,41 @@ void client::create_socket() const {
     {
         perror("fails at connect");
         close(clientSock.get_socket_descriptor());
+        ofs.close();
         return;
     }
 
     std::cout << "CONNECTED!\n";
+    ofs << "CONNECTED!\n";
 
-    char buf[1024];
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf)-1, "---HELLO FROM CLIENT");
+    std::cout << "[Thread " << std::this_thread::get_id() << "]" << "clientSock.open()" << '\n';
+    ofs << "[Thread " << std::this_thread::get_id() << "]" << "clientSock.open()" << '\n';
+    clientSock.open();
 
-    getchar();
+    getchar(); // waits for user input
+
+    char initialMsg[1024];
+    memset(initialMsg, 0, sizeof(initialMsg));
+    snprintf(initialMsg, sizeof(initialMsg)-1, "---HELLO FROM CLIENT");
+    int msgLen{0};
+    msgLen = sctp_sendmsg(clientSock.get_socket_descriptor(), initialMsg, 1024, (struct sockaddr*)&peerAddr, sizeof(peerAddr), htonl(ADDR), 0, 0, 0, 0);
+    if (-1 == msgLen)
+    {
+        std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "send() failed from client socket\n";
+        perror("send() failed from client socket\n");
+        close(clientSock.get_socket_descriptor());
+        return;
+    }
+    std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "initial message containing " << msgLen << " bytes sent to peer!\n";
+    ofs << "\t[Thread " << std::this_thread::get_id() << "]" << "initial message containing " << msgLen << " bytes sent to peer!\n";
 
     while(true) {
         std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "client endless loop" << '\n';
-        int msgLen{0};
-        msgLen = sctp_sendmsg(clientSock.get_socket_descriptor(), buf, 1024, (struct sockaddr*)&peerAddr, sizeof(peerAddr), htonl(ADDR), 0, 0, 0, 0);
-        if (-1 == msgLen)
-        {
-            std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "send() failed from client socket\n";
-            perror("send() failed from client socket\n");
-            close(clientSock.get_socket_descriptor());
-            return;
-        }
-        std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "sent " << msgLen << " bytes to peer!\n";
-        sleep(10);
+        ofs << "\t[Thread " << std::this_thread::get_id() << "]" << "client endless loop" << '\n';
+        ofs.flush();
+        sleep(20);
     }
-
+    ofs.close();
 }
 
 int main() {

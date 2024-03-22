@@ -103,7 +103,7 @@ void server::create_socket() const {
         std::cout << "[Thread " << std::this_thread::get_id() << "]" << "server endless loop" << '\n';
         ofs << "[Thread " << std::this_thread::get_id() << "]" << "server endless loop" << '\n';
         ofs.flush();
-        sleep(5);
+        sleep(20);
     }
     ofs.close();
 }

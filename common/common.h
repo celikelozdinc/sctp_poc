@@ -78,7 +78,7 @@ private:
         char inputBuffer[4096];
         size_t inputBufferSize{4096};
         while(true) {
-            std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "_on_open()"  << '\n';
+            std::cout << "\n\n\t\t[Thread " << _receiverThread.get_id() << "]" << "_on_open()"  << '\n';
             sockaddr_in addr;
             (void)memset(&addr, 0, sizeof(sockaddr_in));
             sctp_sndrcvinfo sri;
@@ -160,6 +160,19 @@ private:
                     std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << received << " received received from : " << inet_ntoa(addr.sin_addr) << ":"
                               << ntohs(addr.sin_port) << '\n';
                     //invoke callback func
+                    char buf[1024];
+                    memset(buf, 0, sizeof(buf));
+                    if ('-' == received[0]) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "This message is received from sctp client.\n";
+                        snprintf(buf, sizeof(buf)-1, "HELLO FROM SERVER---");
+                        sctp_sendmsg(_fd, buf, 1024, (struct sockaddr*)&addr, sizeof(addr), htonl(ADDR), 0, 0, 0, 0);
+                    } else if ('H' == received[0]) {
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "This message is received from sctp server.\n";
+                        snprintf(buf, sizeof(buf)-1, "---HELLO FROM CLIENT");
+                        sctp_sendmsg(_fd, buf, 1024, (struct sockaddr*)&addr, sizeof(addr), htonl(ADDR), 0, 0, 0, 0);
+                    } else {
+                        std::cerr << "\t\t[Thread " << _receiverThread.get_id() << "]"  << " UNEXPECTED MESSAGE IS RECEIVED!!!\n";
+                    }
                 }
             }
             sleep(5);
