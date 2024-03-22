@@ -134,6 +134,10 @@ private:
                         std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_DATA_IO_EVENT notification has been received.\n";
                     } else if (SCTP_SHUTDOWN_EVENT == notification->sn_header.sn_type) {
                         std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_SHUTDOWN_EVENT notification has been received.\n";
+                        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "Closing socket...\n";
+                        //invoke callback func
+                        close(_fd);
+                        return;
                     } else if (SCTP_SENDER_DRY_EVENT == notification->sn_header.sn_type) {
                         std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "SCTP_SENDER_DRY_EVENT notification has been received.\n";
                     } else if (SCTP_SEND_FAILED_EVENT == notification->sn_header.sn_type) {
