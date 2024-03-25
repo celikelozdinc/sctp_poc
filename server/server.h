@@ -6,9 +6,9 @@
 class server {
 public:
     server();
-    void create_socket() const;
+    void create_socket();
 private:
-    Socket _sock;
+    Socket _serverSock;
 };
 
 

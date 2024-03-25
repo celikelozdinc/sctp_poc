@@ -65,27 +65,21 @@ void client::create_socket() const {
     Socket clientSock{sockFd};
 
     // Configure heartbeats
-    if(setsockopt(clientSock.get_socket_descriptor(), SOL_SCTP, SCTP_PEER_ADDR_PARAMS , &heartbeat, sizeof(heartbeat)) != 0) {
+    if (!clientSock.set_socket_option(SCTP_PEER_ADDR_PARAMS, &heartbeat)) {
         perror("fails at configuring heartbeats via setsockopt");
-        close(clientSock.get_socket_descriptor());
         ofs.close();
-        return;
     }
 
     // Configure events
-    if((setsockopt(clientSock.get_socket_descriptor(), SOL_SCTP, SCTP_EVENTS, (void *)&events, sizeof(events)))!= 0) {
+    if (!clientSock.set_socket_option(SCTP_EVENTS, &events)) {
         perror("fails at configuring events via setsockopt");
-        close(clientSock.get_socket_descriptor());
         ofs.close();
-        return;
     }
 
     // Configure init message
-    if((setsockopt(clientSock.get_socket_descriptor(), SOL_SCTP, SCTP_INITMSG, &initMsg, sizeof(initMsg))) != 0) {
+    if (!clientSock.set_socket_option(SCTP_INITMSG, &initMsg)) {
         perror("fails at configuring init message via setsockopt");
-        close(clientSock.get_socket_descriptor());
         ofs.close();
-        return;
     }
 
     // Configure rto
@@ -99,7 +93,6 @@ void client::create_socket() const {
     if((sctp_connectx(clientSock.get_socket_descriptor(), (struct sockaddr*)&peerAddr, 1, nullptr)) < 0)
     {
         perror("fails at connect");
-        close(clientSock.get_socket_descriptor());
         ofs.close();
         return;
     }
@@ -113,16 +106,15 @@ void client::create_socket() const {
 
     getchar(); // waits for user input
 
-    char initialMsg[1024];
+    char initialMsg[BUFSIZE];
     memset(initialMsg, 0, sizeof(initialMsg));
-    snprintf(initialMsg, sizeof(initialMsg)-1, "---HELLO FROM CLIENT");
+    snprintf(initialMsg, sizeof(initialMsg)-1, "-----HELLO FROM CLIENT");
     int msgLen{0};
-    msgLen = sctp_sendmsg(clientSock.get_socket_descriptor(), initialMsg, 1024, (struct sockaddr*)&peerAddr, sizeof(peerAddr), htonl(ADDR), 0, 0, 0, 0);
+    msgLen = clientSock.send(initialMsg, BUFSIZE, (struct sockaddr*)&peerAddr);
     if (-1 == msgLen)
     {
         std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "send() failed from client socket\n";
         perror("send() failed from client socket\n");
-        close(clientSock.get_socket_descriptor());
         return;
     }
     std::cout << "\t[Thread " << std::this_thread::get_id() << "]" << "initial message containing " << msgLen << " bytes sent to peer!\n";

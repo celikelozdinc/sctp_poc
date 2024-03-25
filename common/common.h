@@ -13,6 +13,7 @@
 
 constexpr static uint16_t PORT = 4141;
 constexpr static uint32_t ADDR = 2130706433;
+constexpr static size_t BUFSIZE = 1024;
 /***
 A one-to-many style interface with 1 to MANY relationship between
 socket and associations where the outbound association setup is
@@ -42,18 +43,29 @@ association with a server to request services.
 class Socket {
 public:
     explicit Socket(int fd) : _fd{fd} {
-        std::cout << "FILE DESCRIPTOR = " << _fd << '\n';
+        std::cout << "Socket(int) = " << _fd << ", at = " << (void*)this << '\n';
     }
-    //template <typename O, typename S>
-    //void set_socket_option();
+
+    template <typename O, typename D>
+    bool set_socket_option(O option, const D* data) const {
+        if(setsockopt(_fd, SOL_SCTP, option , data, sizeof(*data)) != 0) {
+            return false;
+        }
+        return true;
+    }
 
     ~Socket() {
-        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "~Socket()" << '\n';
-        _receiverThread.join();
+        std::cout << "~Socket() for fd : " << _fd << '\n';
+        if(_receiverThread.joinable()) {
+            std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "~Socket() for fd : " << _fd << '\n';
+            _receiverThread.join();
+        }
+        close(_fd);
     }
 
-    int send(unsigned char* buf, size_t msgLen) const {
-        return -1;
+    int send(char* buf, size_t msgLen, struct sockaddr* peerAddr) const {
+        std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]" << "Sending " << msgLen << " bytes to peer!\n";
+        return sctp_sendmsg(_fd, buf, msgLen, (struct sockaddr*)peerAddr, sizeof(*peerAddr), htonl(ADDR), 0, 0, 0, 0);
     };
 
     const int get_socket_descriptor() const {
@@ -178,16 +190,16 @@ private:
                     std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << received << " received received from : " << inet_ntoa(addr.sin_addr) << ":"
                               << ntohs(addr.sin_port) << '\n';
                     //invoke callback func
-                    char buf[1024];
+                    char buf[BUFSIZE];
                     memset(buf, 0, sizeof(buf));
                     if ('-' == received[0]) {
                         std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "This message is received from sctp client.\n";
-                        snprintf(buf, sizeof(buf)-1, "HELLO FROM SERVER---");
-                        sctp_sendmsg(_fd, buf, 1024, (struct sockaddr*)&addr, sizeof(addr), htonl(ADDR), 0, 0, 0, 0);
+                        snprintf(buf, sizeof(buf)-1, "HELLO FROM SERVER-----");
+                        send(buf, BUFSIZE, (struct sockaddr*)&addr);
                     } else if ('H' == received[0]) {
                         std::cout << "\t\t[Thread " << _receiverThread.get_id() << "]"  << "This message is received from sctp server.\n";
-                        snprintf(buf, sizeof(buf)-1, "---HELLO FROM CLIENT");
-                        sctp_sendmsg(_fd, buf, 1024, (struct sockaddr*)&addr, sizeof(addr), htonl(ADDR), 0, 0, 0, 0);
+                        snprintf(buf, sizeof(buf)-1, "-----HELLO FROM CLIENT");
+                        send(buf, BUFSIZE, (struct sockaddr*)&addr);
                     } else {
                         std::cerr << "\t\t[Thread " << _receiverThread.get_id() << "]"  << " UNEXPECTED MESSAGE IS RECEIVED!!!\n";
                     }
@@ -196,7 +208,7 @@ private:
             sleep(1);
         }
     }
-    int _fd;
+    int _fd{};
     std::thread _receiverThread;
 };
 

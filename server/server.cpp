@@ -3,9 +3,9 @@
 #include <chrono>
 #include <ctime>
 
-server::server() : _sock{-1} {}
+server::server() : _serverSock{socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)} {}
 
-void server::create_socket() const {
+void server::create_socket() {
 
     std::ofstream ofs{"../out/server_socket.log"};
     if (!ofs) {
@@ -42,25 +42,21 @@ void server::create_socket() const {
     //        .srto_min = 800,
     //};
 
-    int sockFd{0};
-    if ( (sockFd = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP)) == -1) {
+    if(-1 == _serverSock.get_socket_descriptor()) {
         perror("fails at server socket creation");
         return;
     }
-    Socket serverSock{sockFd};
 
     // Configure heartbeats
-    if(setsockopt(serverSock.get_socket_descriptor(), SOL_SCTP, SCTP_PEER_ADDR_PARAMS , &heartbeat, sizeof(heartbeat)) != 0) {
+    if (!_serverSock.set_socket_option(SCTP_PEER_ADDR_PARAMS, &heartbeat)) {
         perror("fails at configuring heartbeats via setsockopt");
-        close(serverSock.get_socket_descriptor());
         ofs.close();
         return;
     }
 
     // Configure events
-    if((setsockopt(serverSock.get_socket_descriptor(), SOL_SCTP, SCTP_EVENTS, (void *)&events, sizeof(events)))!= 0) {
+    if (!_serverSock.set_socket_option(SCTP_EVENTS, &events)) {
         perror("fails at configuring events via setsockopt");
-        close(serverSock.get_socket_descriptor());
         ofs.close();
         return;
     }
@@ -73,9 +69,9 @@ void server::create_socket() const {
     //}
 
     // Bind
-    if(bind(serverSock.get_socket_descriptor(), (struct sockaddr*)&peerAddr, sizeof(peerAddr)) < 0) {
+    if(bind(_serverSock.get_socket_descriptor(), (struct sockaddr*)&peerAddr, sizeof(peerAddr)) < 0) {
         perror("fails at binding");
-        close(serverSock.get_socket_descriptor());
+        close(_serverSock.get_socket_descriptor());
         ofs.close();
         return;
     }
@@ -84,10 +80,10 @@ void server::create_socket() const {
     std::cout << ctime(&now);
     ofs << ctime(&now);
 
-    if (listen(serverSock.get_socket_descriptor(), 10) < 0)
+    if (listen(_serverSock.get_socket_descriptor(), 10) < 0)
     {
         perror("fails at listening");
-        close(serverSock.get_socket_descriptor());
+        close(_serverSock.get_socket_descriptor());
         ofs.close();
         return;
     }
@@ -97,12 +93,12 @@ void server::create_socket() const {
 
     std::cout << "[Thread " << std::this_thread::get_id() << "]" << "serverSock.open()" << '\n';
     ofs << "[Thread " << std::this_thread::get_id() << "]" << "serverSock.open()" << '\n';
-    serverSock.open();
+    _serverSock.open();
 
     while(true) {
         std::cout << "[Thread " << std::this_thread::get_id() << "]" << "server endless loop" << '\n';
         ofs << "[Thread " << std::this_thread::get_id() << "]" << "server endless loop" << '\n';
-        serverSock.query();
+        _serverSock.query();
         ofs.flush();
         sleep(10);
     }
